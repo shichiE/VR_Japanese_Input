@@ -13,6 +13,8 @@ public class WordInput : MonoBehaviour
     public GameObject frameObj;
     // 入力文字オブジェクト
     public GameObject inputTextObj;
+    // 右手であるか
+    public bool isRightHand;
 
     // 文字
     private GameObject[] _horizontalWords = new GameObject[10];
@@ -20,11 +22,20 @@ public class WordInput : MonoBehaviour
     // 選択文字を囲うフレーム
     private GameObject _frame;
 
-    // 右手人差し指トリガーフラグ
-    private bool _rIndexTrigerFlag;
+    // 人差し指トリガーフラグ
+    private bool _indexTrigerFlag;
+
+    // 人差し指トリガー
+    private OVRInput.RawButton _indexTrigger;
+    // 中指トリガー
+    private OVRInput.RawButton _handTrigger;
+    // 下方ボタン
+    private OVRInput.RawButton _downsideButton;
+    // 上方ボタン
+    private OVRInput.RawButton _upsideButton;
 
     // 文字間隔
-    private static readonly float _wordsInterval = 0.045f;
+    private static readonly float WORDS_INTERVAL = 0.045f;
 
     // 現在の文字
     private string _nowCharacter = "";
@@ -58,6 +69,11 @@ public class WordInput : MonoBehaviour
     private static readonly string _preUnvoicedCharacters = "がぎぐげござじずぜぞだぢづでどぱぴぷぺぽぁぃぅぇぉっゃゅょ";
     private static readonly string _unvoicedCharacters = "かきくけこさしすせそたちつてとはひふへほあいうえおつやゆよ";
 
+    // 右手文字のタグ
+    private static readonly string RIGHT_HAND_WORD_TAG = "RightHandWord";
+    // 左手文字のタグ
+    private static readonly string LEFT_HAND_WORD_TAG = "LeftHandWord";
+
     // コントローラーの振動
     private Vibrate _vibrate;
 
@@ -68,12 +84,27 @@ public class WordInput : MonoBehaviour
     /// </summary>
     void Start()
     {
-        _rIndexTrigerFlag = false;
+        _indexTrigerFlag = false;
 
         _localHandPosition = Vector3.zero;
         _originHandPosition = Vector3.zero;
 
         _vibrate = new Vibrate();
+
+        if (isRightHand)
+        {
+            _indexTrigger = OVRInput.RawButton.RIndexTrigger;
+            _handTrigger = OVRInput.RawButton.RHandTrigger;
+            _downsideButton = OVRInput.RawButton.A;
+            _upsideButton = OVRInput.RawButton.B;
+        }
+        else
+        {
+            _indexTrigger = OVRInput.RawButton.LIndexTrigger;
+            _handTrigger = OVRInput.RawButton.LHandTrigger;
+            _downsideButton = OVRInput.RawButton.X;
+            _upsideButton = OVRInput.RawButton.Y;
+        }
     }
 
     /// <summary>
@@ -81,21 +112,21 @@ public class WordInput : MonoBehaviour
     /// </summary>
     void Update()
     {
-        // 右人差し指トリガーを押した
-        if (OVRInput.GetDown(OVRInput.RawButton.RIndexTrigger))
+        // 人差し指トリガーを押した
+        if (OVRInput.GetDown(_indexTrigger))
         {
-            _rIndexTrigerFlag = true;
+            _indexTrigerFlag = true;
             CreateWordCubes();
         }
-        // 右人差し指トリガーを離した
-        else if (OVRInput.GetUp(OVRInput.RawButton.RIndexTrigger))
+        // 人差し指トリガーを離した
+        else if (OVRInput.GetUp(_indexTrigger))
         {
-            _rIndexTrigerFlag = false;
+            _indexTrigerFlag = false;
             DeleteWordCubes();
         }
 
-        // Aボタンを押した
-        if (OVRInput.GetDown(OVRInput.RawButton.A))
+        // Aボタン/Xボタンを押した
+        if (OVRInput.GetDown(_downsideButton))
         {
             // 文字確定
             if (_nowCharacter != "")
@@ -103,8 +134,8 @@ public class WordInput : MonoBehaviour
                 inputTextObj.GetComponent<TextMesh>().text += _nowCharacter;
             }
         }
-        // Bボタンを押した
-        else if (OVRInput.GetDown(OVRInput.RawButton.B))
+        // Bボタン/Yボタンを押した
+        else if (OVRInput.GetDown(_upsideButton))
         {
             string text = inputTextObj.GetComponent<TextMesh>().text;
             if (text.Length > 0)
@@ -112,14 +143,14 @@ public class WordInput : MonoBehaviour
                 inputTextObj.GetComponent<TextMesh>().text = text.Remove(text.Length - 1);
             }
         }
-        // 右中指トリガーを押した
-        else if (OVRInput.GetDown(OVRInput.RawButton.RHandTrigger))
+        // 中指トリガーを押した
+        else if (OVRInput.GetDown(_handTrigger))
         {
             ChangeCharacter();
         }
 
-        // 右人差し指トリガー握っている
-        if (_rIndexTrigerFlag)
+        // 人差し指トリガー握っている
+        if (_indexTrigerFlag)
         {
             MoveWordCubes();
         }
@@ -140,14 +171,15 @@ public class WordInput : MonoBehaviour
 
         // 文字の親
         GameObject parentWords = new GameObject("Parent Words");
-        parentWords.tag = "Word";
+        string wordsTag = isRightHand ? RIGHT_HAND_WORD_TAG : LEFT_HAND_WORD_TAG;
+        parentWords.tag = wordsTag;
         parentWords.transform.position = _originHandPosition;
 
         // 水平に展開する文字
         for (int h = 0; h < 10; h++)
         {
             _horizontalWords[h] = Instantiate(cubeEmptyObj,
-                                 new Vector3(_originHandPosition.x - _wordsInterval * (float)(6 - h),
+                                 new Vector3(_originHandPosition.x - WORDS_INTERVAL * (float)(6 - h),
                                              _originHandPosition.y,
                                              _originHandPosition.z),
                                  Quaternion.identity);
@@ -158,9 +190,9 @@ public class WordInput : MonoBehaviour
         for (int v = 0; v < 5; v++)
         {
             _verticalWords[v] = Instantiate(cubeEmptyObj,
-                               new Vector3(_originHandPosition.x - _wordsInterval,
+                               new Vector3(_originHandPosition.x - WORDS_INTERVAL,
                                            _originHandPosition.y,
-                                           _originHandPosition.z + _wordsInterval * (float)(v <= 2 ? v : 2 - v)),
+                                           _originHandPosition.z + WORDS_INTERVAL * (float)(v <= 2 ? v : 2 - v)),
                                Quaternion.identity);
             _verticalWords[v].GetComponentInChildren<TextMesh>().text = _jpCharacters[0, v];
             _verticalWords[v].transform.parent = parentWords.transform;
@@ -171,14 +203,15 @@ public class WordInput : MonoBehaviour
 
         // フレーム
         _frame = Instantiate(frameObj,
-                            new Vector3(_originHandPosition.x - _wordsInterval,
+                            new Vector3(_originHandPosition.x - WORDS_INTERVAL,
                                         _originHandPosition.y,
                                         _originHandPosition.z),
                             Quaternion.identity);
         _frame.transform.parent = parentWords.transform;
 
         _nowCharacter = _jpCharacters[5, 0];
-        parentWords.transform.rotation = Quaternion.Euler(-15.0f, _originHandRotation.eulerAngles.y, 0.0f);// Y軸回転のみ影響する。X軸は少し角度をつけて見やすくする
+        // Y軸回転のみ影響する。X軸は少し角度をつけて見やすくする
+        parentWords.transform.rotation = Quaternion.Euler(-15.0f, _originHandRotation.eulerAngles.y, 0.0f);
     }
 
 
@@ -191,7 +224,8 @@ public class WordInput : MonoBehaviour
         _nowCharacter = "";
 
         // すべて削除
-        GameObject[] wordObject = GameObject.FindGameObjectsWithTag("Word");
+        string destroyTag = isRightHand ? RIGHT_HAND_WORD_TAG : LEFT_HAND_WORD_TAG;
+        GameObject[] wordObject = GameObject.FindGameObjectsWithTag(destroyTag);
         foreach (GameObject destroy in wordObject)
         {
             Destroy(destroy);
@@ -246,22 +280,24 @@ public class WordInput : MonoBehaviour
         _localHandPosition = this.transform.position - _originHandPosition;
 
         // 水平に展開する文字
-        float newCoodinateSystemPositionX = (_localHandPosition.x * Mathf.Cos(_originHandRotation.eulerAngles.y * Mathf.PI / 180)) + (_localHandPosition.z * Mathf.Sin(-_originHandRotation.eulerAngles.y * Mathf.PI / 180));
-        newCoodinateSystemPositionX = Mathf.Min(Mathf.Max(newCoodinateSystemPositionX, _wordsInterval * -4), _wordsInterval * 5); // 飛び出し制限
+        float newCoodinateSystemPositionX = (_localHandPosition.x * Mathf.Cos(_originHandRotation.eulerAngles.y * Mathf.PI / 180)) +
+            (_localHandPosition.z * Mathf.Sin(-_originHandRotation.eulerAngles.y * Mathf.PI / 180));
+        newCoodinateSystemPositionX = Mathf.Min(Mathf.Max(newCoodinateSystemPositionX, WORDS_INTERVAL * -4), WORDS_INTERVAL * 5); // 飛び出し制限
         for (int h = 0; h < 10; h++)
         {
             _horizontalWords[h].GetComponentInChildren<TextMesh>().color = Color.black;
-            _horizontalWords[h].transform.localPosition = new Vector3(-_wordsInterval * (float)(6 - h) + newCoodinateSystemPositionX,
+            _horizontalWords[h].transform.localPosition = new Vector3(-WORDS_INTERVAL * (float)(6 - h) + newCoodinateSystemPositionX,
                                                                      0,
                                                                      0);
         }
 
-        int columnIowindex = 5 - (int)Mathf.Ceil((newCoodinateSystemPositionX - _wordsInterval / 2) / _wordsInterval);
+        int columnIowindex = 5 - (int)Mathf.Ceil((newCoodinateSystemPositionX - WORDS_INTERVAL / 2) / WORDS_INTERVAL);
         columnIowindex = Mathf.Min(Mathf.Max(columnIowindex, 0), 9);
 
-        float newCoodinateSystemPositionZ = (_localHandPosition.x * Mathf.Sin(_originHandRotation.eulerAngles.y * Mathf.PI / 180)) + (_localHandPosition.z * Mathf.Cos(-_originHandRotation.eulerAngles.y * Mathf.PI / 180));
-        newCoodinateSystemPositionZ = Mathf.Min(Mathf.Max(newCoodinateSystemPositionZ, _wordsInterval * -2), _wordsInterval * 2); // 飛び出し制限
-        int rowIndex = (int)Mathf.Ceil((newCoodinateSystemPositionZ - _wordsInterval / 2) / _wordsInterval) + 2;
+        float newCoodinateSystemPositionZ = (_localHandPosition.x * Mathf.Sin(_originHandRotation.eulerAngles.y * Mathf.PI / 180)) +
+            (_localHandPosition.z * Mathf.Cos(-_originHandRotation.eulerAngles.y * Mathf.PI / 180));
+        newCoodinateSystemPositionZ = Mathf.Min(Mathf.Max(newCoodinateSystemPositionZ, WORDS_INTERVAL * -2), WORDS_INTERVAL * 2); // 飛び出し制限
+        int rowIndex = (int)Mathf.Ceil((newCoodinateSystemPositionZ - WORDS_INTERVAL / 2) / WORDS_INTERVAL) + 2;
         rowIndex = rowIndex <= 2 ? 2 - rowIndex : rowIndex;
         rowIndex = Mathf.Min(Mathf.Max(rowIndex, 0), 4);
 
@@ -270,16 +306,16 @@ public class WordInput : MonoBehaviour
         {
             if (v == 0)
             {
-                _horizontalWords[columnIowindex].transform.localPosition = new Vector3(-_wordsInterval,
+                _horizontalWords[columnIowindex].transform.localPosition = new Vector3(-WORDS_INTERVAL,
                                                                                       0,
                                                                                       newCoodinateSystemPositionZ);
                 continue;
             }
             _verticalWords[v].GetComponentInChildren<TextMesh>().text = _jpCharacters[columnIowindex, v];
             _verticalWords[v].GetComponentInChildren<TextMesh>().color = Color.black;
-            _verticalWords[v].transform.localPosition = new Vector3(-_wordsInterval,
+            _verticalWords[v].transform.localPosition = new Vector3(-WORDS_INTERVAL,
                                                                    0,
-                                                                   _wordsInterval * (float)(v <= 2 ? v : 2 - v) + newCoodinateSystemPositionZ);
+                                                                   WORDS_INTERVAL * (float)(v <= 2 ? v : 2 - v) + newCoodinateSystemPositionZ);
         }
 
         if (rowIndex != 0)
@@ -297,7 +333,7 @@ public class WordInput : MonoBehaviour
             Debug.Log("_nowCharacter=" + _nowCharacter);
 
             // 振動
-            _vibrate.VibrateHand(true, 16, 64);
+            _vibrate.VibrateHand(isRightHand, 16, 64);
         }
     }
 }

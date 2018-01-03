@@ -270,6 +270,26 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 5
   m_LocalEulerAnglesHint: {x: -90, y: 90, z: 0}
+--- !u!1 &154574610 stripped
+GameObject:
+  m_PrefabParentObject: {fileID: 109308, guid: 126d619cf4daa52469682f85c1378b4a, type: 2}
+  m_PrefabInternal: {fileID: 1269396464}
+--- !u!114 &154574612
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_PrefabParentObject: {fileID: 0}
+  m_PrefabInternal: {fileID: 0}
+  m_GameObject: {fileID: 154574610}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 72317d52abde208459c0b53509690434, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  cubeEmptyObj: {fileID: 1467662401712192, guid: 68af5b865a9c63e4c8c2a94da1d862f4,
+    type: 2}
+  frameObj: {fileID: 1366714025265276, guid: 1328b63508e155a439c11be935caab05, type: 2}
+  inputTextObj: {fileID: 1025959480}
+  isRightHand: 0
 --- !u!1 &360426987 stripped
 GameObject:
   m_PrefabParentObject: {fileID: 113768, guid: 126d619cf4daa52469682f85c1378b4a, type: 2}
@@ -289,6 +309,7 @@ MonoBehaviour:
     type: 2}
   frameObj: {fileID: 1366714025265276, guid: 1328b63508e155a439c11be935caab05, type: 2}
   inputTextObj: {fileID: 1025959480}
+  isRightHand: 1
 --- !u!1 &665134584
 GameObject:
   m_ObjectHideFlags: 0
